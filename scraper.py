@@ -10,6 +10,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 #### FUNCTIONS 1.1
+import ssl
 import requests
 
 def validateFilename(filename):
@@ -38,24 +39,27 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = requests.get(url, verify=False)
+        req = urllib2.Request(url.encode("utf-8"))
+        gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        r = urllib2.urlopen(req, context=gcontext)
         count = 1
-        while r.status_code == 500 and count < 4:
+        while r.getcode() == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = requests.get(url, verify=False)
+            req = urllib2.Request(url.encode("utf-8"))
+            gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            r = urllib2.urlopen(req, context=gcontext)
         sourceFilename = r.headers.get('Content-Disposition')
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
-        validURL = r.status_code == 200
+        validURL = r.getcode() == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.xlsx', '.pdf', '.xlt', '.zip']
         return validURL, validFiletype
     except:
         print ("Error validating URL.")
         return False, False
-
 
 
 def validate(filename, file_url):
@@ -91,10 +95,10 @@ data = []
 
 
 #### READ HTML 1.0
-import ssl
+
 req = urllib2.Request(url)
 gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-html = urllib2.urlopen(url, context=gcontext)
+html = urllib2.urlopen(req, context=gcontext)
 soup = BeautifulSoup(html, 'lxml')
 
 
